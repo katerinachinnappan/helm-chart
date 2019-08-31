@@ -1,0 +1,135 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "hello-world.fullname" . }}
+  namespace: <your-namespace>
+  labels:
+    app: {{ template "hello-world.name" . }}
+    chart: {{ template "hello-world.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      workload.user.cattle.io/workloadselector: deployment-<your-namespace>-{{ .Release.Name }}
+      app: {{ template "hello-world.name" . }}
+      release: {{ .Release.Name }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        date: ""
+        workload.user.cattle.io/workloadselector: deployment-<your-namespace>-{{ .Release.Name }}
+        app: {{ template "ariba-chart.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - command:
+        - bash
+        - /home/appuser/app/loop.sh
+        env:
+        - name: DEPLOYMENT_NAME
+          value: {{ .Release.Name }}
+        - name: CONFIG_DIR_PATH
+          value: /home/appuser/app/main/config
+        - name: CREDENTIALS_FILE_PATH
+          value: /home/appuser/app/main/creds/credentials.json
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status
+            port: 8090
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: {{ .Release.Name }}
+        ports:
+        - containerPort: 8090
+          name: 8090tcp01
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status
+            port: 8090
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 2
+          timeoutSeconds: 5
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          procMount: Default
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 999
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+        volumeMounts:
+        - mountPath: /home/appuser/app/main/config
+          name: vol1
+        - mountPath: /home/appuser/app/main/creds
+          name: vol2
+        - mountPath: /mount
+          name: vol3
+          subPath: <supbath-name>
+        - mountPath: /home/appuser/app/main/samples
+          name: vol4
+        - mountPath: /home/appuser/app/main/certs
+          name: vol5
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 438
+          items:
+          - key: "{{ .Values.volumes.configMap.base }}"
+            path: "{{ .Values.volumes.configMap.base }}"
+          - key: "{{ .Values.volumes.configMap.specific }}"
+            path: "{{ .Values.volumes.configMap.specific }}"
+          name: configs
+          optional: false
+        name: vol1
+      - name: vol2
+        secret:
+          defaultMode: 438
+          optional: false
+          secretName: <secret-name>
+      - name: vol3
+        persistentVolumeClaim:
+          claimName: <volume-name>
+      - configMap:
+          defaultMode: 438
+          name: <your-samples-name>
+          optional: false
+        name: vol4
+      - configMap:
+          defaultMode: 438
+          name: certs
+          optional: false
+        name: vol5

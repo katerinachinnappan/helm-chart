@@ -1,0 +1,13 @@
+# Default values for ariba-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: artifacts.kpn.org/ariba
+  tag: 1.32.1
+  pullPolicy: Always
+
+volumes:
+  configMap:
+    base: base_config.json
+    specific: specific_config.json
+
