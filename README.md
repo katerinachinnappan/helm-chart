@@ -16,7 +16,7 @@ Know what is a helm chart and how it works.
 
 ### Generate Templates & Rollout Deployments
 
-**Modify templates/deployment.yaml & Makefile by replacing <your-namespace> with your namespace you wish to deploy to.**
+**Modify templates/deployment.yaml & Makefile by replacing <<your-namespace>>with your namespace you wish to deploy to.**
 
 **Specify the deployment names and their config names in deployment-names.txt and config-names.txt respectively. If you don't specify any configs, a default config (set in values.yaml) will be applied to all deployments.**
 
